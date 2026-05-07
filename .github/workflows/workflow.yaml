@@ -52,7 +52,7 @@ jobs:
           output: codeql-results.sarif
 
       - name: Run tests
-        run: pytest
+        run: PYTHONPATH=. pytest
 
   docker-build:
     name: Build, scan, and push Docker image to ECR
