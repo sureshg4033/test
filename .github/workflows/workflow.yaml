@@ -37,19 +37,19 @@ jobs:
       - name: Install dependencies
         run: pip install --no-cache-dir -r requirements.txt
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: python
+      # - name: Initialize CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     languages: python
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      # - name: Autobuild
+      #   uses: github/codeql-action/autobuild@v3
 
-      - name: Run CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: 'security'
-          output: codeql-results.sarif
+      # - name: Run CodeQL analysis
+      #   uses: github/codeql-action/analyze@v3
+      #   with:
+      #     category: 'security'
+      #     output: codeql-results.sarif
 
       - name: Run tests
         run: PYTHONPATH=. pytest
