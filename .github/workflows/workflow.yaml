@@ -37,6 +37,11 @@ jobs:
       - name: Install dependencies
         run: pip install --no-cache-dir -r requirements.txt
 
+      - name: Run linting
+        uses: advanced-security/python-lint-code-scanning-action@v1
+        with:
+          linter: flake8
+
       # - name: Initialize CodeQL
       #   uses: github/codeql-action/init@v3
       #   with:
