@@ -95,7 +95,7 @@ jobs:
       ECR_REGISTRY: 851563870286.dkr.ecr.us-east-1.amazonaws.com
       ECR_REPOSITORY: gists-api
       ECS_CLUSTER: gists-cluster
-      ECS_SERVICE: gists-api-service
+      ECS_SERVICE: gists-api-task-service-ajrhzfd7
       ECS_TASK_DEFINITION: gists-api-task
     steps:
       - name: Checkout repository
