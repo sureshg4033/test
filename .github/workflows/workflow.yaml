@@ -33,11 +33,27 @@ jobs:
         uses: advanced-security/python-lint-code-scanning-action@v1
         with:
           linter: flake8
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: 'security'
+          output: codeql-results.sarif
+          
       - name: Run tests
         run: PYTHONPATH=. pytest
+
   docker-build:
     name: 'Build, scan, and push Docker image to ECR'
     needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: gists-api
@@ -88,6 +104,7 @@ jobs:
   ecs-deploy:
     name: Deploy to ECS
     needs: docker-build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: gists-api
