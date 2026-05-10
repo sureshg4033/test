@@ -242,7 +242,23 @@ jobs:
         run: |
           curl -f https://dev-api.yourdomain.com/health
 
-  deploy-prod:
+ approval:
+    name: Production Approval
+    runs-on: ubuntu-latest
+
+    needs:
+      - deploy-dev
+
+    environment:
+      name: production-approval
+
+    steps:
+      - name: Awaiting manual approval
+        run: |
+          echo "Deployment approved. Proceeding to production."
+
+
+ deploy-prod:
     name: Deploy PROD
     runs-on: ubuntu-latest
 
