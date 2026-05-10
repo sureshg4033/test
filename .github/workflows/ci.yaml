@@ -1,0 +1,97 @@
+name: CI build and push
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  test-build-scan:
+    name: Test, Build and Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: '${{ runner.os }}-pip-${{ hashFiles(''requirements.txt'') }}'
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+      - name: Run linting
+        uses: advanced-security/python-lint-code-scanning-action@v1
+        with:
+          linter: flake8
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: 'security'
+          output: codeql-results.sarif
+
+      - name: Run tests
+        run: PYTHONPATH=. pytest
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+          aws-region: us-east-1
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: >
+            851563870286.dkr.ecr.us-east-1.amazonaws.com/gists-api:$${{ github.sha }}
+
+            851563870286.dkr.ecr.us-east-1.amazonaws.com/gists-api:latest
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.9.0
+        with:
+          image-ref: >-
+            851563870286.dkr.ecr.us-east-1.amazonaws.com/gists-api:${{ github.sha }}
+          format: table
+          severity: 'CRITICAL,HIGH'
+          # exit-code: '1'
+          vuln-type: 'os,library'
+      - name: Push Docker image to ECR
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          load: false
+          tags: >
+            851563870286.dkr.ecr.us-east-1.amazonaws.com/gists-api:${{ github.sha }}
+
+            851563870286.dkr.ecr.us-east-1.amazonaws.com/gists-api:latest
+  

@@ -1,0 +1,57 @@
+name: Deploy to ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-dev:
+    name: Deploy DEV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+          aws-region: us-east-1
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition gists-api-task \
+            --query taskDefinition > task-definition.json
+      - name: Render new ECS task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: gists-api
+          image: ${{ inputs.image_tag }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: task-definition.json
+          service: gists-api-task-service
+          cluster: gists-cluster
+          wait-for-service-stability: true
+
+  approval:
+    name: Manual approval
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment:
+      name: approval
+    steps:
+      - name: Awaiting manual approval
+        run: |
+          echo "Deployment approved. Proceeding to production."
+  

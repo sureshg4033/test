@@ -46,7 +46,7 @@ jobs:
         with:
           category: 'security'
           output: codeql-results.sarif
-          
+
       - name: Run tests
         run: PYTHONPATH=. pytest
 
@@ -90,6 +90,7 @@ jobs:
             }}
           format: table
           severity: 'CRITICAL,HIGH'
+          exit-code: '1'
           vuln-type: 'os,library'
       - name: Push Docker image to ECR
         uses: docker/build-push-action@v5
@@ -112,7 +113,7 @@ jobs:
       ECR_REGISTRY: 851563870286.dkr.ecr.us-east-1.amazonaws.com
       ECR_REPOSITORY: gists-api
       ECS_CLUSTER: gists-cluster
-      ECS_SERVICE: gists-api-task-service-ajrhzfd7
+      ECS_SERVICE: gists-api-task-service
       ECS_TASK_DEFINITION: gists-api-task
     steps:
       - name: Checkout repository
